@@ -39,9 +39,8 @@ class VLogic(VObject):
 
         count = self._width
         self._indices = np.arange(count, dtype=np.uint32).reshape(shape)
-        if val is not None:
-            self._val = [VLogic.VBit() for _ in range(count)]
-            self <= val
+        self._val = [VLogic.VBit() for _ in range(count)]
+        if val is not None: self <= val
 
     def __getitem__(self, key):
         indices = self._indices[key]
@@ -59,18 +58,13 @@ class VLogic(VObject):
             for i in range(self._width):
                 self._val[i] <= ((v >> i) & 0x1)
             return
-        except:
+        except Exception as e:
+            print(e)
             pass
 
         v = other.serialize(VEndian.LITTLE)
         for i in range(self._width):
             self._val[i] <= v[i]
-
-    def __str__(self):
-        str_shape = ''
-        for dim in self._shape:
-            str_shape += '[%d:0]' % (dim - 1)
-        return 'Arr%s' % str_shape
 
     def __int__(self):
         bits = self.serialize()[::-1]
