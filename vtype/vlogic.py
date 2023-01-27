@@ -59,7 +59,6 @@ class VLogic(VObject):
                 self._val[i] <= ((v >> i) & 0x1)
             return
         except Exception as e:
-            print(e)
             pass
 
         v = other.serialize(VEndian.LITTLE)
