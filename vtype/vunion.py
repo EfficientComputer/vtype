@@ -1,7 +1,7 @@
 from .vobject import VObject, VEndian
 
 
-class VStruct(VObject):
+class VUnion(VObject):
 
     def members(self):
         return {
@@ -10,11 +10,8 @@ class VStruct(VObject):
         }
 
     def width(self):
-        w = 0
         for v in self.members().values():
-            w += v.width()
-
-        return w
+            return v.width()
 
     def shape(self):
         return (self.width(), )
@@ -24,36 +21,31 @@ class VStruct(VObject):
             assert hasattr(other, k)
             v <= getattr(other, k)
 
+    def __setattr__(self, k, v):
+        if isinstance(v, VObject):
+            if not hasattr(self, 'underlying'):
+                dict.__setattr__(self, 'underlying', v)
+            assert v.width() == self.underlying.width()
+            v.update_val(self.underlying.val())
+
+        dict.__setattr__(self, k, v)
+
     def val(self):
-        v = []
-        for v in self.members().values():
-            v += v.val()
-        return v
+        return self.underlying.val()
 
     def update_val(self, val):
-        running = 0
-        for v in self.members().values():
-            upper = running+len(v.val())
-            v.update_val(val[running:upper])
-            running = upper
+        self.underlying.update_val(val)
 
     def serialize(self, endian=VEndian.BIG):
-        bitvector = []
-        members = list(self.members().values())
-
-        if endian == VEndian.LITTLE: members = members[::-1]
-
-        for v in members:
-            bitvector += v.serialize(endian)
-
-        return bitvector
+        for v in self.members().values():
+            return v.serialize(endian)
 
     def verilog(self, name=None, refs=set(), inline=False, indent=0):
         if name is None: name = self.vtype()
         ind = '\t' * indent
         inline = '' if inline else 'typedef '
 
-        s = f'{ind}{inline}struct packed {{\n'
+        s = f'{ind}{inline}union packed {{\n'
 
         for k, v in self.members().items():
             if v.vtype() in refs:

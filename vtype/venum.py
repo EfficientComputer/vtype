@@ -25,6 +25,12 @@ def VEnum(width):
         def shape(self):
             return (width, )
 
+        def val(self):
+            return self.v.val()
+
+        def update_val(self, val):
+            self.v.update_val(val)
+
         def serialize(self, endian: VEndian = VEndian.BIG):
             return self.v.serialize(endian)
 
@@ -35,7 +41,7 @@ def VEnum(width):
             s = f'{inline}{indent}enum logic [{width-1}:0] {{\n'
 
             members = \
-             {k: v for k, v in type(self).__dict__.items() if type(v) is int}
+                {k: v for k, v in type(self).__dict__.items() if type(v) is int}
             for k, v in members.items():
                 s += f'{indent}\t{k} = {width}\'d{v},\n'
 

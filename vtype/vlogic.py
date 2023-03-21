@@ -10,6 +10,9 @@ class VLogic(VObject):
         def __init__(self):
             self._val = 0
 
+        def __str__(self):
+            return str(self._val)
+
         def __le__(self, other):
             try:
                 self._val = int(other)
@@ -71,6 +74,9 @@ class VLogic(VObject):
 
     def val(self):
         return self._val
+
+    def update_val(self, val):
+        self._val = val
 
     def width(self):
         return self._width
