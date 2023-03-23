@@ -1,6 +1,8 @@
 from .vobject import VObject, VEndian
 from .vlogic import VLogic
 
+from enum import Enum
+
 
 def VEnum(width):
 
@@ -18,6 +20,11 @@ def VEnum(width):
 
         def __int__(self):
             return int(self.v)
+
+        def __iter__(self):
+            for k, v in type(self).__dict__.items():
+                if type(v) is int:
+                    yield k, v
 
         def width(self):
             return width
