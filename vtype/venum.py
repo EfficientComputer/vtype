@@ -21,6 +21,9 @@ def VEnum(width):
         def __int__(self):
             return int(self.v)
 
+        def __eq__(self, other):
+            return int(self) == int(other)
+
         def __iter__(self):
             for k, v in type(self).__dict__.items():
                 if type(v) is int:
