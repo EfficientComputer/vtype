@@ -10,10 +10,9 @@ class VEndian(IntEnum):
 
 
 class VObject(object):
-
     def vtype(self) -> str:
         name = type(self).__qualname__
-        return name.replace('_T.', '_').replace('.', '_').lower()
+        return name.replace("_T.", "_").replace(".", "_").lower()
 
     def __str__(self):
         return self.verilog()

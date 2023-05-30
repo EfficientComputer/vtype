@@ -3,56 +3,68 @@ import numpy as np
 from functools import reduce
 
 
+class VBit(VObject):
+    def __init__(self):
+        self._val = 0
+
+    def vtype(self):
+        name = super().vtype()
+        if name != "logic":
+            return name
+
+    def __str__(self):
+        return str(self._val)
+
+    def __le__(self, other):
+        try:
+            self._val = int(other)
+            return
+        except:
+            pass
+        self._val = other.val()
+
+    def val(self):
+        return self._val
+
+    def width(self):
+        return 1
+
+    def shape(self):
+        return (1,)
+
+    def serialize(self, endian=VEndian.BIG):
+        return [self._val]
+
+    def verilog(self, name=None, refs=set(), inline=False, indent=0):
+        if name is None:
+            name = self.vtype()
+        inline = "" if inline else "typedef "
+        indent = "\t" * indent
+        return f"{inline}{indent}logic {name.lower()};"
+
+
 class VLogic(VObject):
-
-    class VBit(VObject):
-
-        def __init__(self):
-            self._val = 0
-
-        def __str__(self):
-            return str(self._val)
-
-        def __le__(self, other):
-            try:
-                self._val = int(other)
-                return
-            except:
-                pass
-            self._val = other.val()
-
-        def val(self):
-            return self._val
-
-        def width(self):
-            return 1
-
-        def shape(self):
-            return (1, )
-
-        def serialize(self, endian=VEndian.BIG):
-            return [self._val]
-
-    def __init__(self, shape=(1), val=None):
-        if type(shape) is not tuple: shape = (shape, )
+    def __init__(self, shape=(1), base_type=VBit, overwrite_values=False):
+        if type(shape) is not tuple:
+            shape = (shape,)
         shape = tuple(map(int, shape))
 
-        self._width = reduce(lambda x, y: x * y, shape)
+        self._count = reduce(lambda x, y: x * y, shape)
         self._shape = shape
 
-        count = self._width
-        self._indices = np.arange(count, dtype=np.uint32).reshape(shape)
-        self._val = [VLogic.VBit() for _ in range(count)]
-        if val is not None: self <= val
+        self._indices = np.arange(self._count, dtype=np.uint32).reshape(shape)
+        if not overwrite_values:
+            self._val = [base_type() for _ in range(self._count)]
+        self._base_type = base_type
+        self._width = self._count * base_type().width()
 
     def __getitem__(self, key):
         indices = self._indices[key]
         if isinstance(indices, np.uint32):
             return self._val[indices]
 
-        new = VLogic(indices.shape, None)
+        new = VLogic(indices.shape, self._base_type, True)
         new._val = [self._val[idx] for idx in indices.flatten()]
-        new._width = indices.size
         return new
 
     def __le__(self, other):
@@ -86,15 +98,15 @@ class VLogic(VObject):
 
     def vtype(self):
         name = super().vtype()
-        if name != 'logic':
+        if name != "logic":
             return name
 
-        str_shape = ''
+        str_shape = ""
         for dim in self._shape:
-            str_shape += f'{dim}_'
+            str_shape += f"{dim}_"
         str_shape = str_shape[:-1]
 
-        return f'{name}_{str_shape}'
+        return f"{name}_{str_shape}"
 
     def serialize(self, endian=VEndian.BIG):
         if self._val is None:
@@ -107,10 +119,11 @@ class VLogic(VObject):
         return bits[::-1] if endian == VEndian.BIG else bits
 
     def verilog(self, name=None, refs=set(), inline=False, indent=0):
-        if name is None: name = self.vtype()
-        inline = '' if inline else 'typedef '
-        indent = '\t' * indent
-        str_shape = ''
+        if name is None:
+            name = self.vtype()
+        inline = "" if inline else "typedef "
+        indent = "\t" * indent
+        str_shape = ""
         for dim in self._shape:
-            str_shape += '[%d:0]' % (dim - 1)
-        return f'{inline}{indent}logic {str_shape} {name.lower()};'
+            str_shape += "[%d:0]" % (dim - 1)
+        return f"{inline}{indent}logic {str_shape} {name.lower()};"
